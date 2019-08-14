@@ -12,6 +12,11 @@
     "extra": {
         "branch-alias": {
             "dev-master": "1.x-dev"
+        },
+        "osmscripts": {
+            "commands": {
+                "create:script": "OsmScripts\\OsmScripts\\Commands\\CreateScript"
+            }
         }
     },
     "bin": [

@@ -1,5 +1,6 @@
 #!/usr/bin/env php
-<?php
+<?php echo '<?php' ?>
+
 
 use OsmScripts\Core\Script;
 
