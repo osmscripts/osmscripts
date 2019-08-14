@@ -1,4 +1,8 @@
 #!/usr/bin/env php
 <?php
 
-echo 'Hi!\n';
+use OsmScripts\Core\Script;
+
+include __DIR__ . '/../../autoload.php';
+
+exit((new Script(basename(__FILE__)))->run());
