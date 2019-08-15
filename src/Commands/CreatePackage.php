@@ -13,7 +13,7 @@ use Symfony\Component\Console\Input\InputOption;
 /** @noinspection PhpUnused */
 
 /**
- * `create:script` shell command class.
+ * `create:package` shell command class.
  *
  * @property Files $files @required
  * @property Shell $shell @required
@@ -21,13 +21,12 @@ use Symfony\Component\Console\Input\InputOption;
  * @property string $cwd @required Current working directory - a directory from which this script is invoked
  * @property string $script_path Directory of the Composer project containing currently executed script
  *
- * @property string $script @required Name of script to be created
  * @property string $package @required Name of package to be created
  * @property string $namespace @required PHP root namespace of the package
  * @property string $repo_url @required URL of the server Git repo
  * @property string $path @required Path to directory in `vendor` where new package is created
  */
-class CreateScript extends Command
+class CreatePackage extends Command
 {
     #region Properties
     public function __get($property) {
@@ -43,8 +42,7 @@ class CreateScript extends Command
             case 'cwd': return $this->cwd = $script->cwd;
 
             // arguments
-            case 'script': return $this->script = $this->input->getArgument('script');
-            case 'package': return $this->package = $this->input->getOption('package');
+            case 'package': return $this->package = $this->input->getArgument('package');
             case 'namespace': return $this->namespace = $this->getNamespace();
             case 'repo_url': return $this->repo_url = $this->input->getOption('repo_url');
 
@@ -68,7 +66,7 @@ class CreateScript extends Command
 
     protected function configure() {
         $this
-            ->setDescription("Creates new Composer package with a script in it, " .
+            ->setDescription("Creates new Composer package for writing script commands, " .
                 "pushes it to the specified Git repo and installs it locally")
             ->setHelp(<<<EOT
 Before running this command create empty repo on GitHub or other Git hosting provider. 
@@ -77,11 +75,8 @@ Pass URL of Git repo using --repo_url=REPO_URL syntax.
 Run this command from {$this->script_path}.
 EOT
             )
-            ->addArgument('script', InputArgument::REQUIRED,
-                "Name of script to be created")
-            ->addOption('package', null, InputOption::VALUE_REQUIRED,
-                "Name of Composer package to be created for the script, " .
-                "should be in `{vendor}/{package}` format")
+            ->addArgument('package', InputArgument::REQUIRED,
+                "Name of Composer package to be created")
             ->addOption('namespace', null, InputOption::VALUE_REQUIRED,
                 "Root namespace of PHP classes in this package, use '\\' delimiter")
             ->addOption('repo_url', null, InputOption::VALUE_REQUIRED,
@@ -101,10 +96,6 @@ EOT
         // create a directory for new Composer package in `vendor` directory and
         // `composer.json` file in it which defines the directory as valid Composer package
         $this->createComposerJson();
-
-        // create PHP file registered in `bin` section of package `composer.json` file. This file
-        // will be executed each time user types in script name in shell
-        $this->createScript();
 
         // put package files under Git and push them to repo on server
         $this->initAndPushGitRepo();
@@ -174,20 +165,9 @@ EOT
             throw new Exception("'{$filename}' already exists");
         }
 
-        $this->files->save($filename, $this->files->render('script_composer_json', [
+        $this->files->save($filename, $this->files->render('package_composer_json', [
             'package' => $this->package,
             'namespace' => json_encode($this->namespace),
-            'script' => $this->script,
-        ]));
-    }
-
-    protected function createScript() {
-        $filename = "{$this->path}/{$this->script}";
-
-        $this->files->save($filename, $this->files->render('script', [
-            'package' => $this->package,
-            'namespace' => json_encode($this->namespace),
-            'script' => $this->script,
         ]));
     }
 
