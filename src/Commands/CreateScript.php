@@ -5,8 +5,13 @@ namespace OsmScripts\OsmScripts\Commands;
 use Exception;
 use OsmScripts\Core\Command;
 use OsmScripts\Core\Files;
+use OsmScripts\Core\Git;
+use OsmScripts\Core\Hints\PackageHint;
+use OsmScripts\Core\Project;
 use OsmScripts\Core\Script;
 use OsmScripts\Core\Shell;
+use OsmScripts\Core\Utils;
+use OsmScripts\Core\Variables;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
 
@@ -15,17 +20,19 @@ use Symfony\Component\Console\Input\InputOption;
 /**
  * `create:script` shell command class.
  *
- * @property Files $files @required
- * @property Shell $shell @required
- * @property string[] $package_names @required Names of packages installed in this project
- * @property string $cwd @required Current working directory - a directory from which this script is invoked
+ * @property Files $files @required Helper for generating files.
+ * @property Shell $shell @required Helper for running comands in local shell
  * @property string $script_path Directory of the Composer project containing currently executed script
+ * @property Project $project Information about Composer project in current working directory
+ * @property Git $git Git helper
+ * @property Variables $variables Helper for managing script variables
+ * @property Utils $utils @required various helper functions
+ * @property string $script_name @required Name of currently executed script
  *
  * @property string $script @required Name of script to be created
  * @property string $package @required Name of package to be created
- * @property string $namespace @required PHP root namespace of the package
- * @property string $repo_url @required URL of the server Git repo
- * @property string $path @required Path to directory in `vendor` where new package is created
+ * @property bool $no_update @required If set, skips creation and push of Git repo and Composer update
+ * @property string $path @required Package path in `vendor` directory
  */
 class CreateScript extends Command
 {
@@ -38,15 +45,17 @@ class CreateScript extends Command
             // dependencies
             case 'files': return $this->files = $script->singleton(Files::class);
             case 'shell': return $this->shell = $script->singleton(Shell::class);
-            case 'package_names': return $this->package_names = $script->package_names;
+            case 'project': return $this->project = new Project(['path' => $script->cwd]);
+            case 'git': return $this->git = $script->singleton(Git::class);
+            case 'variables': return $this->variables = $script->singleton(Variables::class);
+            case 'utils': return $this->utils = $script->singleton(Utils::class);
             case 'script_path': return $this->script_path = $script->path;
-            case 'cwd': return $this->cwd = $script->cwd;
+            case 'script_name': return $this->script_name = $script->name;
 
-            // arguments
+            // arguments and options
             case 'script': return $this->script = $this->input->getArgument('script');
             case 'package': return $this->package = $this->input->getOption('package');
-            case 'namespace': return $this->namespace = $this->getNamespace();
-            case 'repo_url': return $this->repo_url = $this->input->getOption('repo_url');
+            case 'no_update': return $this->no_update = $this->input->getOption('no-update');
 
             // calculated properties
             case 'path': return $this->path = "vendor/{$this->package}";
@@ -54,173 +63,84 @@ class CreateScript extends Command
 
         return null;
     }
-
-    protected function getNamespace() {
-        $result = $this->input->getOption('namespace');
-
-        if (strrpos($result, '\\') !== strlen($result) - strlen('\\')) {
-            $result .= '\\';
-        }
-
-        return $result;
-    }
     #endregion
 
     protected function configure() {
         $this
-            ->setDescription("Creates new Composer package with a script in it, " .
-                "pushes it to the specified Git repo and installs it locally")
+            ->setDescription("Creates new script, pushes updated package to server Git repo and " .
+                "registers the changes with Composer")
             ->setHelp(<<<EOT
-Before running this command create empty repo on GitHub or other Git hosting provider. 
-Pass URL of Git repo using --repo_url=REPO_URL syntax.
-
 Run this command from {$this->script_path}.
+
+Before running this command commit and push all changes in all the packages in `vendor`.
+directory.
 EOT
             )
             ->addArgument('script', InputArgument::REQUIRED,
                 "Name of script to be created")
             ->addOption('package', null, InputOption::VALUE_REQUIRED,
                 "Name of Composer package to be created for the script, " .
-                "should be in `{vendor}/{package}` format")
-            ->addOption('namespace', null, InputOption::VALUE_REQUIRED,
-                "Root namespace of PHP classes in this package, use '\\' delimiter")
-            ->addOption('repo_url', null, InputOption::VALUE_REQUIRED,
-                "URL of EMPTY server Git repo for newly created package");
+                "should be in `{vendor}/{package}` format. if not set, \$package script variable is used",
+                $this->variables->get('package'))
+            ->addOption('no-update', null, InputOption::VALUE_NONE,
+                "Skip Git repo commit, push and Composer update");
     }
 
     protected function handle() {
         // this command is expected to run from the global Composer installation and it is expected
         // to generate files in the the global Composer installation
-        $this->verifyThatCurrentDirectoryIsThisProject();
+        $this->project->verifyCurrent();
 
-        // in the end, this command runs `composer update` which overwrites files in project's `vendor`
-        // directory, so all the files in `vendor` directory are expected to be committed to their Git repos
-        // and pushed to server
-        $this->verifyThatThereAreNoUncommittedChanges();
-
-        // create a directory for new Composer package in `vendor` directory and
-        // `composer.json` file in it which defines the directory as valid Composer package
-        $this->createComposerJson();
+        if (!$this->no_update) {
+            // in the end, this command runs `composer update` which overwrites files in project's `vendor`
+            // directory, so all the files in `vendor` directory are expected to be committed to their Git repos
+            // and pushed to server
+            $this->project->verifyNoUncommittedChanges();
+        }
 
         // create PHP file registered in `bin` section of package `composer.json` file. This file
         // will be executed each time user types in script name in shell
         $this->createScript();
 
-        // put package files under Git and push them to repo on server
-        $this->initAndPushGitRepo();
+        // create a directory for new Composer package in `vendor` directory and
+        // `composer.json` file in it which defines the directory as valid Composer package
+        $this->updateComposerJson();
 
-        // run `composer update` to register new package within this project.
-        //
-        // Package PHP namespace will be resolved to `src` subdirectory so all PHP classes
-        // in `src` subdirectory will be autoloaded.
-        //
-        // Newly created script PHP file will be registered in project's `vendor/bin` directory
-        // which should be added to `$PATH` variable and, hence, the script should be available
-        // to run in shell, from any directory
-        $this->updateComposer();
-    }
+        if (!$this->no_update) {
+            // put package files under Git and push them to repo on server
+            $this->shell->cd($this->path, function() {
+                $this->git->commit("`{$this->script}` script created");
+                $this->git->push();
+            });
 
-    protected function verifyThatCurrentDirectoryIsThisProject() {
-        if ($this->script_path !== $this->cwd) {
-            throw new Exception("Before running this command, change current directory to '$this->script_path'");
-        }
-    }
-
-    protected function verifyThatThereAreNoUncommittedChanges() {
-        foreach ($this->package_names as $package) {
-        $this->verifyThatThereIsNoUncommittedChangesInDirectory("vendor/{$package}");
-        }
-    }
-
-
-    protected function verifyThatThereIsNoUncommittedChangesInDirectory($path) {
-        if (!is_dir("{$path}/.git")) {
-            return;
+            // run `composer update` to register new script within this project.
+            //
+            // Newly created script PHP file will be registered in project's `vendor/bin` directory
+            // which should be added to `$PATH` variable and, hence, the script should be available
+            // to run in shell, from any directory
+            $this->project->update();
         }
 
-        $this->shell->cd($path, function() use ($path) {
-            $this->shell->run('git update-index -q --refresh', true);
-
-            // run a command which lists all uncommitted files and if it lists anything, stop
-            if (!empty($output = $this->shell->output('git diff-index --name-only HEAD --'))) {
-                throw new Exception("Commit and push pending changes in '{$path}' first");
-            }
-
-            // download missing commits from the server Git repo (if any)
-            $this->shell->run('git fetch', true);
-
-            // get the name of the current Git branch
-            $branch = implode($this->shell->output('git rev-parse --abbrev-ref HEAD'));
-
-            // count the number of Git commits local Git repo is behind (if $count is
-            // positive) or ahead (if $count is negative).
-            $count = intval(implode($this->shell->output(
-                "git rev-list {$branch}...origin/{$branch} --ignore-submodules --count")));
-
-            // if local and server Git repos are not the same, stop
-            if ($count > 0) {
-                throw new Exception("Push pending commits in '{$path}' first");
-            }
-            if ($count < 0) {
-                throw new Exception("Pull pending commits in '{$path}' first");
-            }
-        }, true);
-    }
-
-
-    protected function createComposerJson() {
-        $filename = "{$this->path}/composer.json";
-        if (is_file($filename)) {
-            throw new Exception("'{$filename}' already exists");
-        }
-
-        $this->files->save($filename, $this->files->render('script_composer_json', [
-            'package' => $this->package,
-            'namespace' => json_encode($this->namespace),
-            'script' => $this->script,
-        ]));
+        $this->shell->run("{$this->script_name} var script={$this->script}");
     }
 
     protected function createScript() {
         $filename = "{$this->path}/{$this->script}";
 
-        $this->files->save($filename, $this->files->render('script', [
-            'package' => $this->package,
-            'namespace' => json_encode($this->namespace),
-            'script' => $this->script,
-        ]));
+        $this->files->save($filename, $this->files->render('script'));
     }
 
-    protected function initAndPushGitRepo() {
-        $this->shell->cd($this->path, function() {
-            // create Git repository
-            $this->shell->run('git init');
+    protected function updateComposerJson() {
+        $filename = "{$this->path}/composer.json";
 
-            // mark all files in current directory as tracked by Git, uncommitted new files
-            $this->shell->run('git add .');
+        /* @var PackageHint $package */
+        $package = $this->utils->readJsonOrFail($filename);
 
-            // create first Git commit
-            $this->shell->run('git commit -am "Initial commit"');
+        if (!isset($package->bin)) {
+            $package->bin = [];
+        }
+        $package->bin[] = $this->script;
 
-            // link local Git repo we have just created with repo on GitHub (or other git hosting provider)
-            $this->shell->run("git remote add origin {$this->repo_url}");
-
-            // push the only local commit to server repo (which is expected to be empty)
-            $this->shell->run('git push -u origin master');
-        });
+        $this->files->save($filename, json_encode($package, JSON_PRETTY_PRINT));
     }
-
-    protected function updateComposer() {
-        $name = strtr($this->package, '/', '_');
-
-        // let the Composer know about server Git repo of newly created package,
-        // otherwise it will not find the package in the next step
-        $this->shell->run("composer config repositories.{$name} vcs {$this->repo_url}");
-
-        // install `master` branch of newly created package. As files are already there Composer
-        // will overwrite them, but in addition it will register package's PHP namespace and newly
-        // created script
-        $this->shell->run("composer require {$this->package}:dev-master@dev");
-    }
-
 }
