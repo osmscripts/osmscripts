@@ -15,8 +15,9 @@
         },
         "osmscripts": {
             "commands": {
+                "create:package": "OsmScripts\\OsmScripts\\Commands\\CreatePackage",
                 "create:script": "OsmScripts\\OsmScripts\\Commands\\CreateScript",
-                "create:package": "OsmScripts\\OsmScripts\\Commands\\CreatePackage"
+                "create:command": "OsmScripts\\OsmScripts\\Commands\\CreateCommand"
             },
             "variables": {
                 "package": "Currently developed Composer package",

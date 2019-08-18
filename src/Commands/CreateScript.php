@@ -7,6 +7,7 @@ use OsmScripts\Core\Command;
 use OsmScripts\Core\Files;
 use OsmScripts\Core\Git;
 use OsmScripts\Core\Hints\PackageHint;
+use OsmScripts\Core\Package;
 use OsmScripts\Core\Project;
 use OsmScripts\Core\Script;
 use OsmScripts\Core\Shell;
@@ -30,9 +31,10 @@ use Symfony\Component\Console\Input\InputOption;
  * @property string $script_name @required Name of currently executed script
  *
  * @property string $script @required Name of script to be created
- * @property string $package @required Name of package to be created
+ * @property string $package @required Package in which command is created
  * @property bool $no_update @required If set, skips creation and push of Git repo and Composer update
- * @property string $path @required Package path in `vendor` directory
+ *
+ * @property Package $package_ @required
  */
 class CreateScript extends Command
 {
@@ -58,7 +60,7 @@ class CreateScript extends Command
             case 'no_update': return $this->no_update = $this->input->getOption('no-update');
 
             // calculated properties
-            case 'path': return $this->path = "vendor/{$this->package}";
+            case 'package_': return $this->package_ = $this->project->getPackage($this->package);
         }
 
         return null;
@@ -79,8 +81,8 @@ EOT
             ->addArgument('script', InputArgument::REQUIRED,
                 "Name of script to be created")
             ->addOption('package', null, InputOption::VALUE_REQUIRED,
-                "Name of Composer package to be created for the script, " .
-                "should be in `{vendor}/{package}` format. if not set, \$package script variable is used",
+                "Name of Composer package in which script will be created, " .
+                "should be in `{vendor}/{package}` format. If not set, \$package script variable is used",
                 $this->variables->get('package'))
             ->addOption('no-update', null, InputOption::VALUE_NONE,
                 "Skip Git repo commit, push and Composer update");
@@ -102,13 +104,12 @@ EOT
         // will be executed each time user types in script name in shell
         $this->createScript();
 
-        // create a directory for new Composer package in `vendor` directory and
-        // `composer.json` file in it which defines the directory as valid Composer package
+        // register the script in `composer.json` file of the package
         $this->updateComposerJson();
 
         if (!$this->no_update) {
             // put package files under Git and push them to repo on server
-            $this->shell->cd($this->path, function() {
+            $this->shell->cd($this->package_->path, function() {
                 $this->git->commit("`{$this->script}` script created");
                 $this->git->push();
             });
@@ -125,13 +126,13 @@ EOT
     }
 
     protected function createScript() {
-        $filename = "{$this->path}/{$this->script}";
+        $filename = "{$this->package_->path}/{$this->script}";
 
         $this->files->save($filename, $this->files->render('script'));
     }
 
     protected function updateComposerJson() {
-        $filename = "{$this->path}/composer.json";
+        $filename = "{$this->package_->path}/composer.json";
 
         /* @var PackageHint $package */
         $package = $this->utils->readJsonOrFail($filename);
