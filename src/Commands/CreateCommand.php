@@ -19,7 +19,6 @@ use Symfony\Component\Console\Input\InputOption;
  * `create:command` shell command class.
  *
  * @property Files $files @required Helper for generating files.
- * @property string $script_path Directory of the Composer project containing currently executed script
  * @property Project $project Information about Composer project in current working directory
  * @property Variables $variables Helper for managing script variables
  * @property Utils $utils @required various helper functions
@@ -46,7 +45,6 @@ class CreateCommand extends Command
             case 'project': return $this->project = new Project(['path' => $script->cwd]);
             case 'variables': return $this->variables = $script->singleton(Variables::class);
             case 'utils': return $this->utils = $script->singleton(Utils::class);
-            case 'script_path': return $this->script_path = $script->path;
 
             // arguments and options
             case 'command': return $this->command = $this->input->getArgument('cmd');
@@ -82,7 +80,7 @@ class CreateCommand extends Command
 
         $result .= "\\Commands";
 
-        if ($class = $this->input->getOption('class') && ($pos = mb_strrpos($class, '\\')) !== false) {
+        if (($class = $this->input->getOption('class')) && ($pos = mb_strrpos($class, '\\')) !== false) {
             $result .= "\\" . mb_substr($class, 0, $pos);
         }
 
@@ -93,10 +91,6 @@ class CreateCommand extends Command
     protected function configure() {
         $this
             ->setDescription("Creates new script command")
-            ->setHelp(<<<EOT
-Run this command from {$this->script_path}.
-EOT
-            )
             ->addArgument('cmd', InputArgument::REQUIRED,
                 "Name of command to be created")
             ->addOption('package', null, InputOption::VALUE_REQUIRED,
@@ -110,13 +104,19 @@ EOT
             ->addOption('namespace', null, InputOption::VALUE_OPTIONAL,
                 "Package sub-namespace. In most cases, leave empty")
             ->addOption('class', null, InputOption::VALUE_OPTIONAL,
-                "Name of command PHP class. If omitted, inferred from command name");
+                "Name of command PHP class. If omitted, inferred from command name")
+            ->addOption('global', '-g', InputOption::VALUE_NONE,
+                "If set, package is created in global Composer installation rather " .
+                "than in current directory.");
     }
 
     protected function handle() {
-        // this command is expected to run from the global Composer installation and it is expected
-        // to generate files in the the global Composer installation
-        $this->project->verifyCurrent();
+        /* @var Script $script */
+        global $script;
+
+        if ($this->input->getOption('global')) {
+            $script->workGlobally();
+        }
 
         // create command PHP class.
         $this->createCommand();

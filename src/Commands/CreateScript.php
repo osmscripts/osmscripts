@@ -2,7 +2,6 @@
 
 namespace OsmScripts\OsmScripts\Commands;
 
-use Exception;
 use OsmScripts\Core\Command;
 use OsmScripts\Core\Files;
 use OsmScripts\Core\Git;
@@ -23,7 +22,6 @@ use Symfony\Component\Console\Input\InputOption;
  *
  * @property Files $files @required Helper for generating files.
  * @property Shell $shell @required Helper for running comands in local shell
- * @property string $script_path Directory of the Composer project containing currently executed script
  * @property Project $project Information about Composer project in current working directory
  * @property Git $git Git helper
  * @property Variables $variables Helper for managing script variables
@@ -33,6 +31,7 @@ use Symfony\Component\Console\Input\InputOption;
  * @property string $script @required Name of script to be created
  * @property string $package @required Package in which command is created
  * @property bool $no_update @required If set, skips creation and push of Git repo and Composer update
+ * @property bool $runner @required
  *
  * @property Package $package_ @required
  */
@@ -51,13 +50,13 @@ class CreateScript extends Command
             case 'git': return $this->git = $script->singleton(Git::class);
             case 'variables': return $this->variables = $script->singleton(Variables::class);
             case 'utils': return $this->utils = $script->singleton(Utils::class);
-            case 'script_path': return $this->script_path = $script->path;
             case 'script_name': return $this->script_name = $script->name;
 
             // arguments and options
             case 'script': return $this->script = $this->input->getArgument('script');
             case 'package': return $this->package = $this->input->getOption('package');
             case 'no_update': return $this->no_update = $this->input->getOption('no-update');
+            case 'runner': return $this->runner = $this->input->getOption('runner');
 
             // calculated properties
             case 'package_': return $this->package_ = $this->project->getPackage($this->package);
@@ -72,8 +71,6 @@ class CreateScript extends Command
             ->setDescription("Creates new script, pushes updated package to server Git repo and " .
                 "registers the changes with Composer")
             ->setHelp(<<<EOT
-Run this command from {$this->script_path}.
-
 Before running this command commit and push all changes in all the packages in `vendor`.
 directory.
 EOT
@@ -85,13 +82,21 @@ EOT
                 "should be in `{vendor}/{package}` format. If not set, \$package script variable is used",
                 $this->variables->get('package'))
             ->addOption('no-update', null, InputOption::VALUE_NONE,
-                "Skip Git repo commit, push and Composer update");
+                "Skip Git repo commit, push and Composer update")
+            ->addOption('runner', null, InputOption::VALUE_NONE,
+                "Create a script which runs a script with the same name from current directory")
+            ->addOption('global', '-g', InputOption::VALUE_NONE,
+                "If set, script is created in global Composer installation rather " .
+                "than in current directory.");
     }
 
     protected function handle() {
-        // this command is expected to run from the global Composer installation and it is expected
-        // to generate files in the the global Composer installation
-        $this->project->verifyCurrent();
+        /* @var Script $script */
+        global $script;
+
+        if ($this->input->getOption('global')) {
+            $script->workGlobally();
+        }
 
         if (!$this->no_update) {
             // in the end, this command runs `composer update` which overwrites files in project's `vendor`
@@ -128,7 +133,7 @@ EOT
     protected function createScript() {
         $filename = "{$this->package_->path}/{$this->script}";
 
-        $this->files->save($filename, $this->files->render('script'));
+        $this->files->save($filename, $this->files->render($this->runner ? 'runner' : 'script'));
     }
 
     protected function updateComposerJson() {
