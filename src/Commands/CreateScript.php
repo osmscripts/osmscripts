@@ -84,20 +84,10 @@ EOT
             ->addOption('no-update', null, InputOption::VALUE_NONE,
                 "Skip Git repo commit, push and Composer update")
             ->addOption('runner', null, InputOption::VALUE_NONE,
-                "Create a script which runs a script with the same name from current directory")
-            ->addOption('global', '-g', InputOption::VALUE_NONE,
-                "If set, script is created in global Composer installation rather " .
-                "than in current directory.");
+                "Create a script which runs a script with the same name from current directory");
     }
 
     protected function handle() {
-        /* @var Script $script */
-        global $script;
-
-        if ($this->input->getOption('global')) {
-            $script->workGlobally();
-        }
-
         if (!$this->no_update) {
             // in the end, this command runs `composer update` which overwrites files in project's `vendor`
             // directory, so all the files in `vendor` directory are expected to be committed to their Git repos

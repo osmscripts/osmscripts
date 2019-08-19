@@ -104,20 +104,10 @@ class CreateCommand extends Command
             ->addOption('namespace', null, InputOption::VALUE_OPTIONAL,
                 "Package sub-namespace. In most cases, leave empty")
             ->addOption('class', null, InputOption::VALUE_OPTIONAL,
-                "Name of command PHP class. If omitted, inferred from command name")
-            ->addOption('global', '-g', InputOption::VALUE_NONE,
-                "If set, package is created in global Composer installation rather " .
-                "than in current directory.");
+                "Name of command PHP class. If omitted, inferred from command name");
     }
 
     protected function handle() {
-        /* @var Script $script */
-        global $script;
-
-        if ($this->input->getOption('global')) {
-            $script->workGlobally();
-        }
-
         // create command PHP class.
         $this->createCommand();
 

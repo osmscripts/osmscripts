@@ -26,21 +26,7 @@ Pass URL of Git repo using --repo_url=REPO_URL syntax.
 Also, before running this command commit and push all changes in all the packages in `vendor`.
 directory.
 EOT
-            )
-            ->addOption('global', '-g', InputOption::VALUE_NONE,
-                "If set, package is created in global Composer installation rather " .
-                "than in current directory.");
-    }
-
-    protected function handle() {
-        /* @var Script $script */
-        global $script;
-
-        if ($this->input->getOption('global')) {
-            $script->workGlobally();
-        }
-
-        parent::handle();
+            );
     }
 
     protected function createPackage() {

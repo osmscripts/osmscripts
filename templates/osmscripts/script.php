@@ -15,7 +15,7 @@ include __DIR__ . '/../../autoload.php';
 //
 // We intentionally put the script object into global `$script` variable so that it can be
 // easily accessed from any part of the code base
-$script = new Script(['name' => basename(__FILE__), 'cwd' => getcwd()]);
+$script = new Script(['name' => basename(__FILE__)]);
 
 // Run the script. The script is Symfony console application. It expects command name and
 // other input to be passed in script's additional arguments
