@@ -3,7 +3,6 @@
 /* @var string $namespace */
 /* @var string $class */
 ?>
-#!/usr/bin/env php
 <?php echo '<?php' ?>
 
 
