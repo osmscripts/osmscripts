@@ -14,7 +14,7 @@ Also, have an account on [GitHub](https://github.com/) or other Git hosting prov
 
 1. Install this package:
 
-		composer config repositories.osmscripts_core vcs git@github.com:osmscripts/core.git
+		composer -g config repositories.osmscripts_core vcs git@github.com:osmscripts/core.git
 		composer -g config repositories.osmscripts_osmscripts vcs git@github.com:osmscripts/osmscripts.git
 		composer -g require osmscripts/osmscripts
 
@@ -112,15 +112,6 @@ You may want to define scripts and command not globally but in every single proj
 
 		cd {project_dir}
 		osmscripts create:command {command}
-
-## Contributing ##
-
-Install development branch:
-
-	composer -g config repositories.osmscripts_core vcs git@github.com:osmscripts/core.git
-	composer -g config repositories.osmscripts_osmscripts vcs git@github.com:osmscripts/osmscripts.git
-	composer -g require osmscripts/core:dev-master@dev
-	composer -g require osmscripts/osmscripts:dev-master@dev
 
 ## License And Credits ##
 
