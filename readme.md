@@ -66,7 +66,7 @@ First, get acquainted with it. You can run it without arguments to get the list 
 
 		{script} {command}
 
-4. Write command logic and description in PHP command class. 
+4. Write command logic and description in PHP command class. Use helper classes which come with [`osmscripts/core`](https://github.com/osmscripts/core) package.
 
 **Note**. You may create a package which adds commands to scripts defined in other packages. To do that, modify script variables as described in next section.
 
