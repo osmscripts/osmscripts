@@ -24,4 +24,4 @@ Install development branch:
 
 ## License ##
 
-This package is licensed under GPL v3.
+This package is licensed under [GPL-3.0](/LICENSE.md).
