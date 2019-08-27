@@ -14,15 +14,16 @@ Also, have an account on [GitHub](https://github.com/) or other Git hosting prov
 
 1. Install this package:
 
-	composer -g config repositories.osmscripts_osmscripts vcs git@github.com:osmscripts/osmscripts.git
-	composer -g require osmscripts/osmscripts
+		composer config repositories.osmscripts_core vcs git@github.com:osmscripts/core.git
+		composer -g config repositories.osmscripts_osmscripts vcs git@github.com:osmscripts/osmscripts.git
+		composer -g require osmscripts/osmscripts
 
 2. Place composer's system-wide `vendor/bin` directory in your `$PATH`. This directory exists in different locations based on your operating system; however, some common locations include:
 
 	* macOS and GNU / Linux Distributions: `$HOME/.composer/vendor/bin`
 	* Windows: `%USERPROFILE%\AppData\Roaming\Composer\vendor\bin`
 
-## Basic Usage ##
+## Usage ##
 
 ### Looking Around ###
 
@@ -116,7 +117,9 @@ You may want to define scripts and command not globally but in every single proj
 
 Install development branch:
 
+	composer -g config repositories.osmscripts_core vcs git@github.com:osmscripts/core.git
 	composer -g config repositories.osmscripts_osmscripts vcs git@github.com:osmscripts/osmscripts.git
+	composer -g require osmscripts/core:dev-master@dev
 	composer -g require osmscripts/osmscripts:dev-master@dev
 
 ## License And Credits ##
