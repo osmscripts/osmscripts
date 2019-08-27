@@ -1,5 +1,3 @@
-# `osmscripts` #
-
 `osmscripts` is command-line utility for creating OS-agnostic shell scripts in PHP.
 
 ## Prerequisites ##
