@@ -1,13 +1,13 @@
 {
-    "name": "osmscripts/osmscripts",
+    "name": "osmscripts\/osmscripts",
     "autoload": {
         "psr-4": {
-            "OsmScripts\\OsmScripts\\": "src/"
+            "OsmScripts\\OsmScripts\\": "src\/"
         }
     },
     "require": {
         "php": ">=7.1",
-        "osmscripts/core": "1.*"
+        "osmscripts\/core": "1.*"
     },
     "extra": {
         "branch-alias": {
@@ -17,7 +17,9 @@
             "commands": {
                 "create:package": "OsmScripts\\OsmScripts\\Commands\\CreatePackage",
                 "create:script": "OsmScripts\\OsmScripts\\Commands\\CreateScript",
-                "create:command": "OsmScripts\\OsmScripts\\Commands\\CreateCommand"
+                "create:command": "OsmScripts\\OsmScripts\\Commands\\CreateCommand",
+                "scripts": "OsmScripts\\OsmScripts\\Commands\\Scripts",
+                "packages": "OsmScripts\\OsmScripts\\Commands\\Packages"
             },
             "variables": {
                 "package": "Currently developed Composer package",
