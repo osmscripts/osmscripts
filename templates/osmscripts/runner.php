@@ -1,31 +1,23 @@
 #!/usr/bin/env php
 <?php echo '<?php' ?>
 
-use OsmScripts\Core\Hints\ComposerLockHint;
+use OsmScripts\Core\Script;
 
-call_user_func(function () {
-    $name = basename(__FILE__);
-    if (!is_file('composer.lock') || !($contents = file_get_contents('composer.lock'))) {
-        throw new Exception("'composer.lock' not found");
-    }
+// This script is expected to be installed globally, using `composer global require`.
+// It uses globally installed Composer packages.
+/** @noinspection PhpIncludeInspection */
+include getcwd() . '/vendor/autoload.php';
 
-    /* @var ComposerLockHint $json */
-    if (!($json = json_decode($contents))) {
-        throw new Exception("'composer.lock' is not valid JSON file");
-    }
+// Create new Script object which contains all the objects: helpers which provide useful APIs,
+// console application with its commands, knowledge about this project's packages and more.
+//
+// Script configures itself from the section of `composer.json` files having the same name as the script.
+//
+// We intentionally put the script object into global `$script` variable so that it can be
+// easily accessed from any part of the code base
+global $script;
+$script = new Script(['name' => basename(__FILE__)]);
 
-    foreach (['packages', 'packages-dev'] as $packages) {
-        foreach ($json->$packages ?? [] as $package) {
-            foreach ($package->bin ?? [] as $script) {
-                if (basename($script) === $name) {
-                    /** @noinspection PhpIncludeInspection */
-                    include "vendor/{$package->name}/{$script}";
-
-                    return;
-                }
-            }
-        }
-    }
-
-    throw new Exception("Script '$name' is not found in '" . getcwd() . "'");
-});
+// Run the script. The script is Symfony console application. It expects command name and
+// other input to be passed in script's additional arguments
+exit($script->run());
