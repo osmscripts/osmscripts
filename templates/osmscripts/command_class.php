@@ -29,7 +29,7 @@ class <?php echo $class ?> extends Command
 //            case 'property': return $this->property = 'value';
 //        }
 
-        return null;
+        return parent::__get($property);
     }
     #endregion
 

@@ -62,7 +62,7 @@ class CreateScript extends Command
             case 'package_': return $this->package_ = $this->project->getPackage($this->package);
         }
 
-        return null;
+        return parent::__get($property);
     }
     #endregion
 
