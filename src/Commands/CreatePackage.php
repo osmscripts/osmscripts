@@ -4,8 +4,6 @@ namespace OsmScripts\OsmScripts\Commands;
 
 use Exception;
 use OsmScripts\Core\Commands\CreatePackage as BaseCreatePackage;
-use OsmScripts\Core\Script;
-use Symfony\Component\Console\Input\InputOption;
 
 /** @noinspection PhpUnused */
 
