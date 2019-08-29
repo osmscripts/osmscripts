@@ -6,7 +6,7 @@ use OsmScripts\Core\Script;
 // This script is expected to be installed globally, using `composer global require`.
 // It uses globally installed Composer packages.
 /** @noinspection PhpIncludeInspection */
-include getcwd() . '/vendor/autoload.php';
+include 'vendor/autoload.php';
 
 // Create new Script object which contains all the objects: helpers which provide useful APIs,
 // console application with its commands, knowledge about this project's packages and more.
