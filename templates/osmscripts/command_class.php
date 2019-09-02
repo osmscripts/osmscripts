@@ -9,25 +9,24 @@
 namespace <?php echo $namespace ?>;
 
 use OsmScripts\Core\Command;
+use OsmScripts\Core\Script;
 
 /** @noinspection PhpUnused */
 
 /**
  * `<?php echo $command ?>` shell command class.
  *
- * TODO: declare @properties here
+ * @property
  */
 class <?php echo $class ?> extends Command
 {
     #region Properties
     public function __get($property) {
-        // TODO: calculate lazy properties here. Use this template:
-//        /* @var Script $script */
-//        global $script;
-//
-//        switch ($property) {
-//            case 'property': return $this->property = 'value';
-//        }
+        /* @var Script $script */
+        global $script;
+
+        switch ($property) {
+        }
 
         return parent::__get($property);
     }
