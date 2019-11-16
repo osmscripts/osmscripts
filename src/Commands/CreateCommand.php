@@ -35,29 +35,29 @@ use Symfony\Component\Console\Input\InputOption;
 class CreateCommand extends Command
 {
     #region Properties
-    public function __get($property) {
+    public function default($property) {
         /* @var Script $script */
         global $script;
 
         switch ($property) {
             // dependencies
-            case 'files': return $this->files = $script->singleton(Files::class);
-            case 'project': return $this->project = new Project(['path' => $script->cwd]);
-            case 'variables': return $this->variables = $script->singleton(Variables::class);
-            case 'utils': return $this->utils = $script->singleton(Utils::class);
+            case 'files': return $script->singleton(Files::class);
+            case 'project': return new Project(['path' => $script->cwd]);
+            case 'variables': return $script->singleton(Variables::class);
+            case 'utils': return $script->singleton(Utils::class);
 
             // arguments and options
-            case 'command': return $this->command = $this->input->getArgument('cmd');
-            case 'namespace': return $this->namespace = $this->getNamespace();
-            case 'class': return $this->class = $this->getClass();
-            case 'script': return $this->script = $this->input->getOption('script');
-            case 'package': return $this->package = $this->input->getOption('package');
+            case 'command': return $this->input->getArgument('cmd');
+            case 'namespace': return $this->getNamespace();
+            case 'class': return $this->getClass();
+            case 'script': return $this->input->getOption('script');
+            case 'package': return $this->input->getOption('package');
 
             // calculated properties
-            case 'package_': return $this->package_ = $this->project->getPackage($this->package);
+            case 'package_': return $this->project->getPackage($this->package);
         }
 
-        return parent::__get($property);
+        return parent::default($property);
     }
 
     protected function getClass() {

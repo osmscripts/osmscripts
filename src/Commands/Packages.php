@@ -16,15 +16,15 @@ use OsmScripts\Core\Script;
 class Packages extends Command
 {
     #region Properties
-    public function __get($property) {
+    public function default($property) {
         /* @var Script $script */
         global $script;
 
         switch ($property) {
-            case 'project': return $this->project = new Project(['path' => $script->cwd]);
+            case 'project': return new Project(['path' => $script->cwd]);
         }
 
-        return parent::__get($property);
+        return parent::default($property);
     }
     #endregion
 

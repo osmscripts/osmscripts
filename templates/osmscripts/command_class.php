@@ -21,14 +21,14 @@ use OsmScripts\Core\Script;
 class <?php echo $class ?> extends Command
 {
     #region Properties
-    public function __get($property) {
+    public function default($property) {
         /* @var Script $script */
         global $script;
 
         switch ($property) {
         }
 
-        return parent::__get($property);
+        return parent::default($property);
     }
     #endregion
 

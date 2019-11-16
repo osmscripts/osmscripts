@@ -38,31 +38,31 @@ use Symfony\Component\Console\Input\InputOption;
 class CreateScript extends Command
 {
     #region Properties
-    public function __get($property) {
+    public function default($property) {
         /* @var Script $script */
         global $script;
 
         switch ($property) {
             // dependencies
-            case 'files': return $this->files = $script->singleton(Files::class);
-            case 'shell': return $this->shell = $script->singleton(Shell::class);
-            case 'project': return $this->project = new Project(['path' => $script->cwd]);
-            case 'git': return $this->git = $script->singleton(Git::class);
-            case 'variables': return $this->variables = $script->singleton(Variables::class);
-            case 'utils': return $this->utils = $script->singleton(Utils::class);
-            case 'script_name': return $this->script_name = $script->name;
+            case 'files': return $script->singleton(Files::class);
+            case 'shell': return $script->singleton(Shell::class);
+            case 'project': return new Project(['path' => $script->cwd]);
+            case 'git': return $script->singleton(Git::class);
+            case 'variables': return $script->singleton(Variables::class);
+            case 'utils': return $script->singleton(Utils::class);
+            case 'script_name': return $script->name;
 
             // arguments and options
-            case 'script': return $this->script = $this->input->getArgument('script');
-            case 'package': return $this->package = $this->input->getOption('package');
-            case 'no_update': return $this->no_update = $this->input->getOption('no-update');
-            case 'runner': return $this->runner = $this->input->getOption('runner');
+            case 'script': return $this->input->getArgument('script');
+            case 'package': return $this->input->getOption('package');
+            case 'no_update': return $this->input->getOption('no-update');
+            case 'runner': return $this->input->getOption('runner');
 
             // calculated properties
-            case 'package_': return $this->package_ = $this->project->getPackage($this->package);
+            case 'package_': return $this->project->getPackage($this->package);
         }
 
-        return parent::__get($property);
+        return parent::default($property);
     }
     #endregion
 
