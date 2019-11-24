@@ -68,7 +68,7 @@ class CreateCommand extends Command
             return $result;
         }
 
-        return implode(array_map('ucfirst', explode(' ', strtr($this->command, ':_-', '   '))));
+        return implode(array_map('ucfirst', explode(' ', strtr($this->command, ':_-.', '    '))));
     }
 
     protected function getNamespace() {
