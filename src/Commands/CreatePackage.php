@@ -12,6 +12,14 @@ use OsmScripts\Core\Commands\CreatePackage as BaseCreatePackage;
  */
 class CreatePackage extends BaseCreatePackage
 {
+    public function default($property) {
+        switch ($property) {
+            case 'base_package': return 'osmscripts/core';
+        }
+
+        return parent::default($property);
+    }
+
     protected function configure() {
         parent::configure();
         $this
@@ -36,6 +44,7 @@ EOT
         $this->files->save($filename, $this->files->render('composer_json', [
             'package' => $this->package,
             'namespace' => json_encode($this->namespace),
+            'version_constraint' => $this->version_constraint,
         ]));
 
         $this->files->save("{$this->path}/.gitattributes",
