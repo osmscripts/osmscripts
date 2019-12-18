@@ -37,5 +37,8 @@ EOT
             'package' => $this->package,
             'namespace' => json_encode($this->namespace),
         ]));
+
+        $this->files->save("{$this->path}/.gitattributes",
+            $this->files->render('.gitattributes'));
     }
 }
