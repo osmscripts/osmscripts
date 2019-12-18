@@ -112,7 +112,7 @@ class CreateCommand extends Command
         $this->createCommand();
 
         // register the command in `composer.json` file of the package
-        $this->updateComposerJson();
+        $this->updateOsmScriptsJson();
 
     }
 
@@ -127,18 +127,16 @@ class CreateCommand extends Command
         ]));
     }
 
-    protected function updateComposerJson() {
-        $filename = "{$this->package_->path}/composer.json";
+    protected function updateOsmScriptsJson() {
+        $filename = "{$this->package_->path}/osmscripts.json";
 
         /* @var PackageHint $package */
-        $package = $this->utils->readJsonOrFail($filename);
+        $package = $this->utils->readJson($filename) ?: (object)[];
 
         $package = $this->utils->merge($package, (object)[
-            'extra' => (object)[
-                $this->script => (object)[
-                    'commands' => (object)[
-                        $this->command => "{$this->namespace}\\{$this->class}",
-                    ],
+            $this->script => (object)[
+                'commands' => (object)[
+                    $this->command => "{$this->namespace}\\{$this->class}",
                 ],
             ],
         ]);
