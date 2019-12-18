@@ -12,10 +12,5 @@
     "require": {
         "php": ">=7.1",
         "osmscripts/core": "1.*"
-    },
-    "extra": {
-        "branch-alias": {
-            "dev-master": "1.x-dev"
-        }
     }
 }
