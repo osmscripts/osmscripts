@@ -1,6 +1,6 @@
 {
     "name": "osmscripts\/osmscripts",
-    "description": "Command-line utility for creating OS-agnostic shell scripts in PHP.",
+    "description": "Shell commands for creating other shell commands",
     "license": "GPL-3.0-only",
     "authors": [
         {
